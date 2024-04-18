@@ -51,8 +51,11 @@ get_github_key() {
         echo -e "${ERROR} This account has no SSH keys available."
         exit 1
     else
-        echo "Available keys:"
+        echo "Raw keys output:"
+        echo "${PUB_KEYS}"
         IFS=$'\n' read -r -a key_array <<< "${PUB_KEYS}"
+        echo "Number of keys fetched: ${#key_array[@]}"
+        echo "Available keys:"
         for i in "${!key_array[@]}"; do
             echo "$((i+1))) ${key_array[i]}"
         done
@@ -63,8 +66,11 @@ get_github_key() {
             exit 1
         fi
         PUB_KEY="${key_array[$key_choice]}"
+        echo "Selected SSH Key:"
+        echo "${PUB_KEY}"
     fi
 }
+
 
 
 get_url_key() {
