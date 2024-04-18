@@ -44,6 +44,8 @@ get_github_key() {
     echo -e "${INFO} The GitHub account is: ${KEY_ID}"
     echo -e "${INFO} Get key from GitHub..."
     PUB_KEYS=$(curl -fsSL https://github.com/${KEY_ID}.keys)
+    echo "Raw keys output:"
+    echo "${PUB_KEYS}"
     if [ "${PUB_KEYS}" == 'Not Found' ]; then
         echo -e "${ERROR} GitHub account not found."
         exit 1
@@ -51,9 +53,7 @@ get_github_key() {
         echo -e "${ERROR} This account has no SSH keys available."
         exit 1
     else
-        echo "Raw keys output:"
-        echo "${PUB_KEYS}"
-        IFS=$'\n' read -r -a key_array <<< "${PUB_KEYS}"
+        IFS=$'\n' read -d '' -ra key_array <<< "$PUB_KEYS"
         echo "Number of keys fetched: ${#key_array[@]}"
         echo "Available keys:"
         for i in "${!key_array[@]}"; do
@@ -70,8 +70,6 @@ get_github_key() {
         echo "${PUB_KEY}"
     fi
 }
-
-
 
 get_url_key() {
     if [ "${KEY_URL}" == '' ]; then
