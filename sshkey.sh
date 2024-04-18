@@ -54,12 +54,14 @@ get_github_key() {
         echo "Raw keys output:"
         echo "${PUB_KEYS}"
         echo "Processing keys..."
-        IFS=$'\n' read -r -a key_array <<< "$PUB_KEYS"
+        key_array=()
+        while IFS= read -r line; do
+            key_array+=("$line")
+        done <<< "$PUB_KEYS"
         echo "Number of keys fetched: ${#key_array[@]}"
         echo "Available keys:"
-        local i=0
-        for key in "${key_array[@]}"; do
-            echo "$((++i))) $key"
+        for i in "${!key_array[@]}"; do
+            echo "$((i+1))) ${key_array[i]}"
         done
         read -p "Enter the number of the key you want to use: " key_choice
         if [[ key_choice -lt 1 || key_choice -gt ${#key_array[@]} ]]; then
@@ -71,7 +73,6 @@ get_github_key() {
         echo "${PUB_KEY}"
     fi
 }
-
 
 get_url_key() {
     if [ "${KEY_URL}" == '' ]; then
