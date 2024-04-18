@@ -47,12 +47,12 @@ get_github_key() {
     if [ "${PUB_KEYS}" == 'Not Found' ]; then
         echo -e "${ERROR} GitHub account not found."
         exit 1
-    elif [ "${PUB_KEYS}" == '' ]; then
-        echo -e "${ERROR} This account ssh key does not exist."
+    elif [ -z "${PUB_KEYS}" ]; then
+        echo -e "${ERROR} This account has no SSH keys available."
         exit 1
     else
-        IFS=$'\n' read -r -a key_array <<< "${PUB_KEYS}"
         echo "Available keys:"
+        IFS=$'\n' read -r -a key_array <<< "${PUB_KEYS}"
         for i in "${!key_array[@]}"; do
             echo "$((i+1))) ${key_array[i]}"
         done
