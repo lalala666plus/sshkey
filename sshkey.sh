@@ -44,8 +44,6 @@ get_github_key() {
     echo -e "${INFO} The GitHub account is: ${KEY_ID}"
     echo -e "${INFO} Get key from GitHub..."
     PUB_KEYS=$(curl -fsSL https://github.com/${KEY_ID}.keys)
-    echo "Raw keys output:"
-    echo "${PUB_KEYS}"
     if [ "${PUB_KEYS}" == 'Not Found' ]; then
         echo -e "${ERROR} GitHub account not found."
         exit 1
@@ -53,23 +51,27 @@ get_github_key() {
         echo -e "${ERROR} This account has no SSH keys available."
         exit 1
     else
-        IFS=$'\n' read -d '' -ra key_array <<< "$PUB_KEYS"
+        echo "Raw keys output:"
+        echo "${PUB_KEYS}"
+        echo "Processing keys..."
+        IFS=$'\n' read -r -a key_array <<< "$PUB_KEYS"
         echo "Number of keys fetched: ${#key_array[@]}"
         echo "Available keys:"
-        for i in "${!key_array[@]}"; do
-            echo "$((i+1))) ${key_array[i]}"
+        local i=0
+        for key in "${key_array[@]}"; do
+            echo "$((++i))) $key"
         done
         read -p "Enter the number of the key you want to use: " key_choice
-        key_choice=$((key_choice-1))
-        if [[ key_choice -lt 0 || key_choice -ge ${#key_array[@]} ]]; then
+        if [[ key_choice -lt 1 || key_choice -gt ${#key_array[@]} ]]; then
             echo -e "${ERROR} Invalid key choice."
             exit 1
         fi
-        PUB_KEY="${key_array[$key_choice]}"
+        PUB_KEY="${key_array[$((key_choice-1))]}"
         echo "Selected SSH Key:"
         echo "${PUB_KEY}"
     fi
 }
+
 
 get_url_key() {
     if [ "${KEY_URL}" == '' ]; then
