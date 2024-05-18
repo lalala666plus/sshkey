@@ -149,23 +149,28 @@ change_port() {
 
 disable_password() {
     if [ $(uname -o) == Android ]; then
-        sed -i "s@.*\(PasswordAuthentication \).*@\1no@" $PREFIX/etc/ssh/sshd_config && {
-            RESTART_SSHD=2
-            echo -e "${INFO} Disabled password login in SSH."
-        } || {
-            RESTART_SSHD=0
-            echo -e "${ERROR} Disable password login failed!"
-            exit 1
-        }
+        # 删除所有存在的PasswordAuthentication和PubkeyAuthentication行，包括被注释的行
+        sed -i "/^[#]*\s*PasswordAuthentication/d" $PREFIX/etc/ssh/sshd_config
+        sed -i "/^[#]*\s*PubkeyAuthentication/d" $PREFIX/etc/ssh/sshd_config
+        
+        # 在文件末尾添加我们的配置
+        echo "PasswordAuthentication no" >> $PREFIX/etc/ssh/sshd_config
+        echo "PubkeyAuthentication yes" >> $PREFIX/etc/ssh/sshd_config
+        
+        RESTART_SSHD=2
+        echo -e "${INFO} Disabled password login and enabled SSH key authentication in SSH."
+        
     else
-        $SUDO sed -i "s@.*\(PasswordAuthentication \).*@\1no@" /etc/ssh/sshd_config && {
-            RESTART_SSHD=1
-            echo -e "${INFO} Disabled password login in SSH."
-        } || {
-            RESTART_SSHD=0
-            echo -e "${ERROR} Disable password login failed!"
-            exit 1
-        }
+        # 删除所有存在的PasswordAuthentication和PubkeyAuthentication行，包括被注释的行
+        $SUDO sed -i "/^[#]*\s*PasswordAuthentication/d" /etc/ssh/sshd_config
+        $SUDO sed -i "/^[#]*\s*PubkeyAuthentication/d" /etc/ssh/sshd_config
+
+        # 在文件末尾添加我们的配置
+        $SUDO bash -c 'echo "PasswordAuthentication no" >> /etc/ssh/sshd_config'
+        $SUDO bash -c 'echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config'
+        
+        RESTART_SSHD=1
+        echo -e "${INFO} Disabled password login and enabled SSH key authentication in SSH."
     fi
 }
 
