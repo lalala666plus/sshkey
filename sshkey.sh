@@ -23,14 +23,16 @@ Usage:
   bash <(curl -fsSL git.io/key.sh) [options...] <arg>
 
 Options:
-  -o	Overwrite mode, this option is valid at the top
-  -g	Get the public key from GitHub, the arguments is the GitHub ID
-  -u	Get the public key from the URL, the arguments is the URL
-  -f	Get the public key from the local file, the arguments is the local file path
-  -p	Change SSH port, the arguments is port number
-  -d	Disable password login"
+  -o  Overwrite mode, this option is valid at the top
+  -g  Get the public key from GitHub, the arguments is the GitHub ID
+  -u  Get the public key from the URL, the arguments is the URL
+  -f  Get the public key from the local file, the arguments is the local file path
+  -p  Change SSH port, the arguments is port number
+  -d  Disable password login
+  -r  Restrict root login to key-based authentication only"
 }
 
+# Check if no arguments were passed
 if [ $# -eq 0 ]; then
     USAGE
     exit 1
@@ -121,32 +123,6 @@ install_key() {
     }
 }
 
-change_port() {
-    echo -e "${INFO} Changing SSH port to ${SSH_PORT} ..."
-    if [ $(uname -o) == Android ]; then
-        [[ -z $(grep "Port " "$PREFIX/etc/ssh/sshd_config") ]] &&
-            echo -e "${INFO} Port ${SSH_PORT}" >>$PREFIX/etc/ssh/sshd_config ||
-            sed -i "s@.*\(Port \).*@\1${SSH_PORT}@" $PREFIX/etc/ssh/sshd_config
-        [[ $(grep "Port " "$PREFIX/etc/ssh/sshd_config") ]] && {
-            echo -e "${INFO} SSH port changed successfully!"
-            RESTART_SSHD=2
-        } || {
-            RESTART_SSHD=0
-            echo -e "${ERROR} SSH port change failed!"
-            exit 1
-        }
-    else
-        $SUDO sed -i "s@.*\(Port \).*@\1${SSH_PORT}@" /etc/ssh/sshd_config && {
-            echo -e "${INFO} SSH port changed successfully!"
-            RESTART_SSHD=1
-        } || {
-            RESTART_SSHD=0
-            echo -e "${ERROR} SSH port change failed!"
-            exit 1
-        }
-    fi
-}
-
 disable_password() {
     if [ $(uname -o) == Android ]; then
         # 删除所有存在的PasswordAuthentication和PubkeyAuthentication行，包括被注释的行
@@ -174,7 +150,56 @@ disable_password() {
     fi
 }
 
-while getopts "og:u:f:p:d" OPT; do
+restrict_root_login() {
+    if [ $(uname -o) == Android ]; then
+        # 删除所有存在的PermitRootLogin行，包括被注释的行
+        sed -i "/^[#]*\s*PermitRootLogin/d" $PREFIX/etc/ssh/sshd_config
+        
+        # 在文件末尾添加我们的配置
+        echo "PermitRootLogin without-password" >> $PREFIX/etc/ssh/sshd_config
+        
+        RESTART_SSHD=2
+        echo -e "${INFO} Restricted root login to key-based authentication in SSH."
+        
+    else
+        # 删除所有存在的PermitRootLogin行，包括被注释的行
+        $SUDO sed -i "/^[#]*\s*PermitRootLogin/d" /etc/ssh/sshd_config
+
+        # 在文件末尾添加我们的配置
+        $SUDO bash -c 'echo "PermitRootLogin without-password" >> /etc/ssh/sshd_config'
+        
+        RESTART_SSHD=1
+        echo -e "${INFO} Restricted root login to key-based authentication in SSH."
+    fi
+}
+
+change_port() {
+    echo -e "${INFO} Changing SSH port to ${SSH_PORT} ..."
+    if [ $(uname -o) == Android ]; then
+        [[ -z $(grep "Port " "$PREFIX/etc/ssh/sshd_config") ]] &&
+            echo -e "${INFO} Port ${SSH_PORT}" >>$PREFIX/etc/ssh/sshd_config ||
+            sed -i "s@.*\(Port \).*@\1${SSH_PORT}@" $PREFIX/etc/ssh/sshd_config
+        [[ $(grep "Port " "$PREFIX/etc/ssh/sshd_config") ]] && {
+            echo -e "${INFO} SSH port changed successfully!"
+            RESTART_SSHD=2
+        } || {
+            RESTART_SSHD=0
+            echo -e "${ERROR} SSH port change failed!"
+            exit 1
+        }
+    else
+        $SUDO sed -i "s@.*\(Port \).*@\1${SSH_PORT}@" /etc/ssh/sshd_config && {
+            echo -e "${INFO} SSH port changed successfully!"
+            RESTART_SSHD=1
+        } || {
+            RESTART_SSHD=0
+            echo -e "${ERROR} SSH port change failed!"
+            exit 1
+        }
+    fi
+}
+
+while getopts "og:u:f:p:dr" OPT; do
     case $OPT in
     o)
         OVERWRITE=1
@@ -200,6 +225,9 @@ while getopts "og:u:f:p:d" OPT; do
         ;;
     d)
         disable_password
+        ;;
+    r)
+        restrict_root_login
         ;;
     ?)
         USAGE
