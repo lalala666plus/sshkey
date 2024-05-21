@@ -119,6 +119,7 @@ function ResolvePortIssue(){
         echo -e 'systemd-resolved 配置修改完成，已释放53端口。'
     else
         chattr -i /etc/resolv.conf
+        ChangeDNS
     fi
 }
 function RestoreDNS(){
@@ -154,7 +155,6 @@ function RestoreDNS(){
 function addDNS(){
     Welcome
     ResolvePortIssue
-    ChangeDNS
 }
 if [ $1 != 'restore' ];then
     addDNS
