@@ -105,6 +105,7 @@ function ChangeDNS() {
         cp /etc/resolv.conf /etc/resolv.conf.backup || { echo "备份失败"; exit 1; }
         echo
         echo -e '备份完成，正在修改DNS配置文件...'
+        chattr -i /etc/resolv.conf
         if [ `cat /etc/redhat-release|sed -r 's/.* ([0-9]+)\..*/\1/'` == 7 ]; then
             sed -i '/\[main\]/a dns=none' /etc/NetworkManager/NetworkManager.conf
             systemctl restart NetworkManager.service || { echo "NetworkManager 重启失败"; exit 1; }
@@ -124,6 +125,7 @@ function ChangeDNS() {
         cp /etc/resolv.conf /etc/resolv.conf.backup || { echo "备份失败"; exit 1; }
         echo
         echo -e '备份完成，正在修改DNS配置文件...'
+        chattr -i /etc/resolv.conf
         echo "" > /etc/resolv.conf || { echo "清空resolv.conf失败"; exit 1; }
         if [[ -n "${tcp}" ]]; then
             if [[ "$tcp" == 'y' ]] || [[ "$tcp" == 'Y' ]]; then
@@ -131,7 +133,7 @@ function ChangeDNS() {
             fi
         fi
         echo -e 'nameserver '$DNS1'' >> /etc/resolv.conf || { echo "添加主DNS失败"; exit 1; }
-        if [ "$DNS2" isn't ''; then
+        if [ "$DNS2" != '' ]; then
             echo -e 'nameserver '$DNS2'' >> /etc/resolv.conf || { echo "添加备用DNS失败"; exit 1; }
         fi
         echo
@@ -150,6 +152,7 @@ function ChangeDNS() {
                 RESOLV_CONF_TARGET=$(readlink /etc/resolv.conf)
                 RESOLV_CONF_PATH="${RESOLV_CONF_TARGET:-/run/systemd/resolve/resolv.conf}"
             else
+                chattr -i /etc/resolv.conf
                 RESOLV_CONF_PATH="/etc/resolv.conf"
             fi
             echo -e 'nameserver '$DNS1'' > $RESOLV_CONF_PATH || { echo "修改resolv.conf失败"; exit 1; }
@@ -168,6 +171,7 @@ function ChangeDNS() {
 function RestoreDNS() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
         echo -e '正在恢复默认DNS配置文件...'
+        chattr -i /etc/resolv.conf
         rm -rf /etc/resolv.conf
         mv /etc/resolv.conf.backup /etc/resolv.conf || { echo "恢复备份失败"; exit 1; }
         if [ `cat /etc/redhat-release|sed -r 's/.* ([0-9]+)\..*/\1/'` == 7 ]; then
@@ -178,11 +182,12 @@ function RestoreDNS() {
         echo -e 'DNS配置文件恢复完成。'
     elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
         echo -e '正在恢复默认DNS配置文件...'
+        chattr -i /etc/resolv.conf
         rm -rf /etc/resolv.conf
         mv /etc/resolv.conf.backup /etc/resolv.conf || { echo "恢复备份失败"; exit 1; }
         echo
         echo -e 'DNS配置文件恢复完成。'
-    elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
+    elif grep -Eqi "Ubuntu" /etc/issue or grep -Eq "Ubuntu" /etc/*-release; then
         echo -e '正在恢复默认DNS配置文件...'
         if [ `cat /etc/issue|awk '{print $2}'|awk -F'.' '{print $1}'` -le 17 ]; then
             echo -e '' > /etc/resolvconf/resolv.conf.d/base || { echo "清空base文件失败"; exit 1; }
@@ -192,6 +197,7 @@ function RestoreDNS() {
                 RESOLV_CONF_TARGET=$(readlink /etc/resolv.conf)
                 RESOLV_CONF_PATH="${RESOLV_CONF_TARGET:-/run/systemd/resolve/resolv.conf}"
             else
+                chattr -i /etc/resolv.conf
                 RESOLV_CONF_PATH="/etc/resolv.conf"
             fi
             sed -i '/nameserver/d' $RESOLV_CONF_PATH || { echo "删除nameserver条目失败"; exit 1; }
