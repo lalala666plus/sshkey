@@ -153,6 +153,7 @@ function RestoreDNS(){
 }
 function addDNS(){
     Welcome
+    ResolvePortIssue
     ChangeDNS
 }
 if [ $1 != 'restore' ];then
