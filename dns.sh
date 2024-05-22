@@ -115,6 +115,7 @@ function ResolvePortIssue(){
         systemctl stop systemd-resolved
         sed -i 's/#DNS=/DNS='$DNS1'/' /etc/systemd/resolved.conf
         sed -i 's/#DNSStubListener=yes/DNSStubListener=no/' /etc/systemd/resolved.conf
+        systemctl restart systemd-resolved
         ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
         echo -e 'systemd-resolved 配置修改完成，已释放53端口。'
     else
